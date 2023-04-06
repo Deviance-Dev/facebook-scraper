@@ -1053,9 +1053,10 @@ class PostExtractor:
             profile_picture = comment.find(".profpic.img", first=True)
             name = profile_picture.attrs.get("alt") or profile_picture.attrs.get("aria-label")
             name = name.split(",")[0]
-            commenter_avatar = profile_picture.attrs.get("src")
+            avatar_style = profile_picture.attrs.get("style")
+            commenter_avatar = utils.get_background_image_url(avatar_style)
             print("AVATAR")
-            print(profile_picture)
+            print(commenter_avatar)
             commenter_id = re.search(r'feed_story_ring(\d+)', comment.html)
             if commenter_id:
                 commenter_id = commenter_id.group(1)
