@@ -721,7 +721,7 @@ class FacebookScraper:
 
     def get_group_info(self, group, **kwargs) -> Profile:
         self.set_user_agent(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8"
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3"
         )
         url = f'/groups/{group}'
         logger.debug(f"Requesting page from: {url}")
@@ -815,7 +815,7 @@ class FacebookScraper:
 
     def get_shop(self, page, **kwargs) -> Iterator[Post]:
         self.set_user_agent(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8"
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3"
         )
         self.set_noscript(True)
         url = f"{page}/shop/"
@@ -840,7 +840,7 @@ class FacebookScraper:
 
     def get_group_posts(self, group: Union[str, int], **kwargs) -> Iterator[Post]:
         self.set_user_agent(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8"
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3"
         )
         iter_pages_fn = partial(iter_group_pages, group=group, request_fn=self.get, **kwargs)
         return self._generic_get_posts(extract_group_post, iter_pages_fn, **kwargs)
