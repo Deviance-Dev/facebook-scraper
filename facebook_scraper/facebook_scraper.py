@@ -1073,6 +1073,7 @@ class FacebookScraper:
 
                         # date is None, no way to check start_date, yield it
                         if partial_post["time"] is None:
+                            null_date_posts += 1
 
                         # check if greater than end_date if end_date is not None
                         if partial_post["time"] is not None and end_date is not None and \
