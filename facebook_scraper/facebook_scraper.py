@@ -53,7 +53,7 @@ class FacebookScraper:
         "Accept": "*/*",
         "Connection": "keep-alive",
         "Accept-Encoding": "gzip,deflate",
-        "User-Agent": "Mozilla/5.0 (Linux; U; Android 4.4.2; en-us; SCH-I535 Build/KOT49H) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3",
     }
     have_checked_locale = False
 
@@ -728,7 +728,7 @@ class FacebookScraper:
 
     def get_group_info(self, group, **kwargs) -> Profile:
         self.set_user_agent(
-            "Mozilla/5.0 (Linux; U; Android 4.4.2; en-us; SCH-I535 Build/KOT49H) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3"
         )
         url = f'/groups/{group}'
         logger.debug(f"Requesting page from: {url}")
@@ -822,7 +822,7 @@ class FacebookScraper:
 
     def get_shop(self, page, **kwargs) -> Iterator[Post]:
         self.set_user_agent(
-            "Mozilla/5.0 (Linux; U; Android 4.4.2; en-us; SCH-I535 Build/KOT49H) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3"
         )
         self.set_noscript(True)
         url = f"{page}/shop/"
@@ -847,7 +847,7 @@ class FacebookScraper:
 
     def get_group_posts(self, group: Union[str, int], **kwargs) -> Iterator[Post]:
         self.set_user_agent(
-            "Mozilla/5.0 (Linux; U; Android 4.4.2; en-us; SCH-I535 Build/KOT49H) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3"
         )
         iter_pages_fn = partial(iter_group_pages, group=group, request_fn=self.get, **kwargs)
         return self._generic_get_posts(extract_group_post, iter_pages_fn, **kwargs)
