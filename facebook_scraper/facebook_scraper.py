@@ -58,7 +58,7 @@ class FacebookScraper:
     have_checked_locale = False
 
     sleep_between_requests = True
-    sleep_time = 5
+    sleep_time = random.randomInt(5,15)
     sleep_time_frequency = 5
 
     def __init__(self, session=None, requests_kwargs=None):
