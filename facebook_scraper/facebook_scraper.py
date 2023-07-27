@@ -59,7 +59,7 @@ class FacebookScraper:
     have_checked_locale = False
 
     sleep_between_requests = True
-    sleep_time = random.randint(5,15)
+    sleep_time = random.randint(10,25)
     sleep_time_frequency = 5
 
     def __init__(self, session=None, requests_kwargs=None):
@@ -325,17 +325,17 @@ class FacebookScraper:
         if kwargs.get("allow_extra_requests", True):
             logger.debug(f"Requesting page from: {account}")
             response = self.get(account)
-            try:
-                top_post = response.html.find(
-                    '[data-ft*="top_level_post_id"]:not([data-sigil="m-see-translate-link"])',
-                    first=True,
-                )
-                assert top_post is not None
-                top_post = PostExtractor(top_post, kwargs, self.get).extract_post()
-                top_post.pop("source")
-                result["top_post"] = top_post
-            except Exception as e:
-                logger.error(f"Unable to extract top_post {type(e)}:{e}")
+            # try:
+            #     top_post = response.html.find(
+            #         '[data-ft*="top_level_post_id"]:not([data-sigil="m-see-translate-link"])',
+            #         first=True,
+            #     )
+            #     assert top_post is not None
+            #     top_post = PostExtractor(top_post, kwargs, self.get).extract_post()
+            #     top_post.pop("source")
+            #     result["top_post"] = top_post
+            # except Exception as e:
+            #     logger.error(f"Unable to extract top_post {type(e)}:{e}")
 
             try:
                 result["Friend_count"] = utils.parse_int(
