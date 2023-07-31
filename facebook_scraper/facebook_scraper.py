@@ -524,10 +524,15 @@ class FacebookScraper:
             response = self.get(all_likes_url)
             result["likes"] = []
             for elem in response.html.find("div._1a5p"):
+                profile_picture = elem.find("i.profpic", first=True).attrs.get("style")
+                match = re.search(r"url\('(.+)'\)", profile_picture)
+                if match:
+                    profile_picture = utils.decode_css_url(match.groups()[0])
                 result["likes"].append(
                     {
                         "name": elem.text,
                         "link": elem.find("a", first=True).attrs.get("href"),
+                        "profile_picture": profile_picture,
                     }
                 )
             more_url = re.search(r'href:"(/timeline/app_collection/more/[^"]+)"', response.text)
@@ -545,10 +550,15 @@ class FacebookScraper:
                             url=FB_MOBILE_BASE_URL,
                         )
                         for elem in element.find("div._1a5p"):
+                            profile_picture = elem.find("i.profpic", first=True).attrs.get("style")
+                            match = re.search(r"url\('(.+)'\)", profile_picture)
+                            if match:
+                                profile_picture = utils.decode_css_url(match.groups()[0])
                             result["likes"].append(
                                 {
                                     "name": elem.text,
                                     "link": elem.find("a", first=True).attrs.get("href"),
+                                    "profile_picture": profile_picture,
                                 }
                             )
                     elif action['cmd'] == 'script':
