@@ -535,39 +535,39 @@ class FacebookScraper:
                         "profile_picture": profile_picture,
                     }
                 )
-            more_url = re.search(r'href:"(/timeline/app_collection/more/[^"]+)"', response.text)
-            if more_url:
-                more_url = more_url.group(1)
-            while more_url:
-                logger.debug(f"Fetching {more_url}")
-                response = self.get(more_url)
-                prefix_length = len('for (;;);')
-                data = json.loads(response.text[prefix_length:])  # Strip 'for (;;);'
-                for action in data['payload']['actions']:
-                    if action['cmd'] == 'append' and action['html']:
-                        element = utils.make_html_element(
-                            action['html'],
-                            url=FB_MOBILE_BASE_URL,
-                        )
-                        for elem in element.find("div._1a5p"):
-                            profile_picture = elem.find("i.profpic", first=True).attrs.get("style")
-                            match = re.search(r"url\('(.+)'\)", profile_picture)
-                            if match:
-                                profile_picture = utils.decode_css_url(match.groups()[0])
-                            result["likes"].append(
-                                {
-                                    "name": elem.text,
-                                    "link": elem.find("a", first=True).attrs.get("href"),
-                                    "profile_picture": profile_picture,
-                                }
-                            )
-                    elif action['cmd'] == 'script':
-                        more_url = re.search(
-                            r'("\\/timeline\\/app_collection\\/more\\/[^"]+")', action["code"]
-                        )
-                        if more_url:
-                            more_url = more_url.group(1)
-                            more_url = json.loads(more_url)
+            # more_url = re.search(r'href:"(/timeline/app_collection/more/[^"]+)"', response.text)
+            # if more_url:
+            #     more_url = more_url.group(1)
+            # while more_url:
+            #     logger.debug(f"Fetching {more_url}")
+            #     response = self.get(more_url)
+            #     prefix_length = len('for (;;);')
+            #     data = json.loads(response.text[prefix_length:])  # Strip 'for (;;);'
+            #     for action in data['payload']['actions']:
+            #         if action['cmd'] == 'append' and action['html']:
+            #             element = utils.make_html_element(
+            #                 action['html'],
+            #                 url=FB_MOBILE_BASE_URL,
+            #             )
+            #             for elem in element.find("div._1a5p"):
+            #                 profile_picture = elem.find("i.profpic", first=True).attrs.get("style")
+            #                 match = re.search(r"url\('(.+)'\)", profile_picture)
+            #                 if match:
+            #                     profile_picture = utils.decode_css_url(match.groups()[0])
+            #                 result["likes"].append(
+            #                     {
+            #                         "name": elem.text,
+            #                         "link": elem.find("a", first=True).attrs.get("href"),
+            #                         "profile_picture": profile_picture,
+            #                     }
+            #                 )
+            #         elif action['cmd'] == 'script':
+            #             more_url = re.search(
+            #                 r'("\\/timeline\\/app_collection\\/more\\/[^"]+")', action["code"]
+            #             )
+            #             if more_url:
+            #                 more_url = more_url.group(1)
+            #                 more_url = json.loads(more_url)
 
         return result
 
