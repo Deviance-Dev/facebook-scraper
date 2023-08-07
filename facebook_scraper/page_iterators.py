@@ -274,7 +274,11 @@ class SearchPageParser(PageParser):
     cursor_regex_2 = re.compile(r'href":"[^"]+(/search/[^"]+)"')
 
     def get_page(self) -> Page:
-          return super()._get_page('div[data-module-role="TOP_PUBLIC_POSTS"]', 'article')
+            try:
+                return super()._get_page('div._5rgr._5gh8._3-hy.async_like', 'article')
+                #return super()._get_page('div[data-module-role="TOP_PUBLIC_POSTS"]', 'article')
+            except:
+                return super()._get_page('article[data-ft*="top_level_post_id"]', 'article')
 
     def get_next_page(self) -> Optional[URL]:
         if self.cursor_blob is not None:
@@ -289,7 +293,7 @@ class SearchPageParser(PageParser):
 
 
 class HashtagPageParser(PageParser):
-    cursor_regex = re.compile(r'(\/hashtag\/[a-z]+\/\?cursor=[^"]+).*$')
+    cursor_regex = re.compile(r'(\/hashtag\/[a-z]+\/\?locale=[a-z_A-Z]+&amp;cursor=[^"]+).*$')
 
     def get_page(self) -> Page:
         return super()._get_page('article', 'article')
