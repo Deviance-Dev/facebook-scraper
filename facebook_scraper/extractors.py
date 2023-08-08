@@ -705,6 +705,11 @@ class PostExtractor:
         elems = list(response.html.find("div[id^='reaction_profile_browser']>div"))
         for elem in elems:
             try:
+                profile_picture = elem.find("img[class='bg s']", first=True).attrs.get("src")
+            except Exception as e:
+                picture = elem.find(".profpic.img", first=True).attrs.get("style")
+                profile_picture = utils.get_background_image_url(picture)
+            try:
                 emoji_class = elem.find(f"div>i.{spriteMapCssClass}", first=True).attrs.get(
                     "class"
                 )[-1]
