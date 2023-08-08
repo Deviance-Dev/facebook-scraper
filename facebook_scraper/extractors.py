@@ -728,6 +728,7 @@ class PostExtractor:
                     reaction_type = None
             yield {
                 "name": elem.find("strong", first=True).text,
+                "profile_picture": profile_picture,
                 "link": utils.urljoin(FB_BASE_URL, elem.find("a", first=True).attrs.get("href")),
                 "type": reaction_type,
             }
