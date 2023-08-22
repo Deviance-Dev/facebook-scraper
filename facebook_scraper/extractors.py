@@ -1363,16 +1363,16 @@ class PostExtractor:
     def extract_with(self) -> PartialPost:
         # Header is like "user is with other_user and n others"
         links = self.element.find("header h3 a")[1:]
-        if links:
-            people = [{"name": links[0].text, "link": links[0].attrs["href"]}]
-            url = links[-1].attrs["href"]
-            if url.startswith("/browse/users/"):
-                logger.debug(f"Fetching {url}")
-                response = self.request(url)
-                links = response.html.find("#root .item>div>div>a:not(.touchable)")
-                for link in links:
-                    people.append({"name": link.text, "link": link.attrs["href"]})
-            return {"with": people, "header": self.element.find("header h3", first=True).text}
+        # if links:
+        #     people = [{"name": links[0].text, "link": links[0].attrs["href"]}]
+        #     url = links[-1].attrs["href"]
+        #     if url.startswith("/browse/users/"):
+        #         logger.debug(f"Fetching {url}")
+        #         response = self.request(url)
+        #         links = response.html.find("#root .item>div>div>a:not(.touchable)")
+        #         for link in links:
+        #             people.append({"name": link.text, "link": link.attrs["href"]})
+        #     return {"with": people, "header": self.element.find("header h3", first=True).text}
 
     @property
     def data_ft(self) -> dict:
