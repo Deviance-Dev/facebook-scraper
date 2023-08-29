@@ -219,7 +219,8 @@ class FacebookScraper:
         while friend_url:
             logger.debug(f"Requesting page from: {friend_url}")
             response = self.get(friend_url)
-            elems = response.html.find('#root table[role="presentation"] a')
+            elems = response.html.find('#root table[role="presentation"]')
+            logger.debug(f"TEXT: {response.html}")
             logger.debug(f"Found {len(elems)} friends")
             for elem in elems:
                 name = elem.find("a.touchable", first=True)
