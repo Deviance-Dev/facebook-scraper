@@ -219,10 +219,10 @@ class FacebookScraper:
         while friend_url:
             logger.debug(f"Requesting page from: {friend_url}")
             response = self.get(friend_url)
-            elems = response.html.find('div[class="timeline"] > div > div')
+            elems = response.html.find('table[role="presentation"]')
             logger.debug(f"Found {len(elems)} friends")
             for elem in elems:
-                name = elem.find("h3>a,h1>a", first=True)
+                name = elem.find("a.touchable", first=True)
                 if not name:
                     continue
                 # Tagline
@@ -232,10 +232,7 @@ class FacebookScraper:
                 else:
                     tagline = ""
                 # Profile Picture
-                profile_picture = elem.find("i.profpic", first=True).attrs.get("style")
-                match = re.search(r"url\('(.+)'\)", profile_picture)
-                if match:
-                    profile_picture = utils.decode_css_url(match.groups()[0])
+                profile_picture = elem.find("img", first=True).attrs["src"]
                 # User ID if present, not present if no "add friend"
                 user_id = elem.find("a.touchable[data-store]", first=True)
                 if user_id:
