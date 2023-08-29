@@ -219,33 +219,20 @@ class FacebookScraper:
         while friend_url:
             logger.debug(f"Requesting page from: {friend_url}")
             response = self.get(friend_url)
-            elems = response.html.find('table[role="presentation"]')
+            elems = response.html.find('table')
             logger.debug(f"Found {len(elems)} friends")
             for elem in elems:
                 name = elem.find("a.touchable", first=True)
                 if not name:
                     continue
-                # Tagline
-                tagline = elem.find("span.fcg", first=True)
-                if tagline:
-                    tagline = tagline.text
-                else:
-                    tagline = ""
                 # Profile Picture
                 profile_picture = elem.find("img", first=True).attrs["src"]
                 # User ID if present, not present if no "add friend"
-                user_id = elem.find("a.touchable[data-store]", first=True)
-                if user_id:
-                    user_id = json.loads(user_id.attrs["data-store"]).get("id")
-                else:
-                    user_id = ""
 
                 friend = {
-                    "id": user_id,
                     "link": name.attrs.get("href"),
                     "name": name.text,
                     "profile_picture": profile_picture,
-                    "tagline": tagline,
                 }
                 yield friend
                 friends_found += 1
