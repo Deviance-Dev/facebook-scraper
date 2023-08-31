@@ -739,23 +739,33 @@ class FacebookScraper:
 
     def get_group_info(self, group, **kwargs) -> Profile:
         self.set_user_agent(
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3"
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8"
         )
         url = f'/groups/{group}'
         logger.debug(f"Requesting page from: {url}")
+        result = {}
         resp = self.get(url).html
         try:
             url = resp.find("a[href*='?view=info']", first=True).attrs["href"]
             url += "&sfd=1"  # Add parameter to get full "about"-text
         except AttributeError:
             raise exceptions.UnexpectedResponse("Unable to resolve view=info URL")
+
+        try:
+            profile_picture = resp.find("i[role='img']", first=True).attrs.get("style")
+            match = re.search(r"url\('(.+)'\)", profile_picture)
+            if match:
+                profile_picture = utils.decode_css_url(match.groups()[0])
+        except AttributeError:
+            raise exceptions.UnexpectedResponse("Unable to find Avatar")
         logger.debug(f"Requesting page from: {url}")
         resp = self.get(url).html
-        result = {}
+        
         result["id"] = re.search(r'/groups/(\d+)', url).group(1)
         try:
             result["name"] = resp.find("header h3", first=True).text
             result["type"] = resp.find("header div", first=True).text
+            result["avatar"] = profile_picture
             members = resp.find("div[data-testid='m_group_sections_members']", first=True)
             result["members"] = utils.parse_int(members.text)
         except AttributeError:
