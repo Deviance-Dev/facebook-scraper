@@ -1438,7 +1438,7 @@ class PostExtractor:
 
     def extract_with(self) -> PartialPost:
         # Header is like "user is with other_user and n others"
-        # links = self.element.find("header h3 a")[1:]
+        links = self.element.find("header h3 a")[1:]
         # if links:
         #     people = [{"name": links[0].text, "link": links[0].attrs["href"]}]
         #     url = links[-1].attrs["href"]
