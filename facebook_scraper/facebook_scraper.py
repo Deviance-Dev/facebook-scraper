@@ -54,7 +54,7 @@ class FacebookScraper:
         "Accept": "*/*",
         "Connection": "keep-alive",
         "Accept-Encoding": "gzip,deflate",
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
     }
     have_checked_locale = False
 
@@ -75,6 +75,7 @@ class FacebookScraper:
         self.request_count = 0
 
         self.account_is_disabled = None
+        self.mbasic_headers = None
 
     def set_user_agent(self, user_agent):
         self.session.headers["User-Agent"] = user_agent
@@ -109,6 +110,7 @@ class FacebookScraper:
         return extractor.extract_reactors(response)
 
     def get_photos(self, account: str, **kwargs) -> Iterator[Post]:
+        kwargs["scraper"] = self
         iter_pages_fn = partial(iter_photos, account=account, request_fn=self.get, **kwargs)
         return self._generic_get_posts(extract_post, iter_pages_fn, **kwargs)
 
@@ -120,17 +122,20 @@ class FacebookScraper:
         )
         return self._generic_get_posts(extract_hashtag_post, iter_pages_fn, **kwargs)
 
-    def get_posts_by_url(self, post_urls, options={}, remove_source=True) -> Iterator[Post]:
+    def get_posts_by_url(
+        self, post_urls, options={}, remove_source=True, **kwargs
+    ) -> Iterator[Post]:
+        kwargs["scraper"] = self
         if self.session.cookies.get("noscript") == "1":
             options["noscript"] = True
         for post_url in post_urls:
             url = str(post_url)
             if url.startswith(FB_BASE_URL):
-                url = url.replace(FB_BASE_URL, FB_MOBILE_BASE_URL)
+                url = url.replace(FB_BASE_URL, FB_MBASIC_BASE_URL)
             if url.startswith(FB_W3_BASE_URL):
-                url = url.replace(FB_W3_BASE_URL, FB_MOBILE_BASE_URL)
+                url = url.replace(FB_W3_BASE_URL, FB_MBASIC_BASE_URL)
             if not url.startswith(FB_MOBILE_BASE_URL):
-                url = utils.urljoin(FB_MOBILE_BASE_URL, url)
+                url = utils.urljoin(FB_MBASIC_BASE_URL, url)
 
             post = {"original_request_url": post_url, "post_url": url}
             logger.debug(f"Requesting page from: {url}")
@@ -140,7 +145,8 @@ class FacebookScraper:
             if "/stories/" in url or "/story/" in url:
                 elem = response.html.find("#story_viewer_content", first=True)
             else:
-                elem = response.html.find('[data-ft*="top_level_post_id"]', first=True)
+                # top_level_post_id is not used anymore
+                elem = response.html.find('[data-ft]', first=True)
                 if not elem:
                     elem = response.html.find('div.async_like', first=True)
                 if response.html.find("div.msg", first=True):
@@ -166,15 +172,17 @@ class FacebookScraper:
                             request_fn=self.get,
                             options=options,
                             full_post_html=response.html,
+                            **kwargs,
                         )
                     )
-                elif url.startswith(utils.urljoin(FB_MOBILE_BASE_URL, "/groups/")):
+                elif url.startswith(utils.urljoin(FB_MBASIC_BASE_URL, "/groups/")):
                     post.update(
                         extract_group_post(
                             elem,
                             request_fn=self.get,
                             options=options,
                             full_post_html=response.html,
+                            **kwargs,
                         )
                     )
                 elif "/stories/" in url or "/story/" in url:
@@ -184,6 +192,7 @@ class FacebookScraper:
                             request_fn=self.get,
                             options=options,
                             full_post_html=response.html,
+                            **kwargs,
                         )
                     )
                 else:
@@ -193,6 +202,7 @@ class FacebookScraper:
                             request_fn=self.get,
                             options=options,
                             full_post_html=response.html,
+                            **kwargs,
                         )
                     )
                 if not post.get("post_url"):
@@ -325,17 +335,17 @@ class FacebookScraper:
         if kwargs.get("allow_extra_requests", True):
             logger.debug(f"Requesting page from: {account}")
             response = self.get(account)
-            # try:
-            #     top_post = response.html.find(
-            #         '[data-ft*="top_level_post_id"]:not([data-sigil="m-see-translate-link"])',
-            #         first=True,
-            #     )
-            #     assert top_post is not None
-            #     top_post = PostExtractor(top_post, kwargs, self.get).extract_post()
-            #     top_post.pop("source")
-            #     result["top_post"] = top_post
-            # except Exception as e:
-            #     logger.error(f"Unable to extract top_post {type(e)}:{e}")
+            try:
+                top_post = response.html.find(
+                    '[data-ft*="top_level_post_id"]:not([data-sigil="m-see-translate-link"])',
+                    first=True,
+                )
+                assert top_post is not None
+                top_post = PostExtractor(top_post, kwargs, self.get).extract_post()
+                top_post.pop("source")
+                result["top_post"] = top_post
+            except Exception as e:
+                logger.error(f"Unable to extract top_post {type(e)}:{e}")
 
             try:
                 result["Friend_count"] = utils.parse_int(
@@ -535,39 +545,34 @@ class FacebookScraper:
                         "profile_picture": profile_picture,
                     }
                 )
-            # more_url = re.search(r'href:"(/timeline/app_collection/more/[^"]+)"', response.text)
-            # if more_url:
-            #     more_url = more_url.group(1)
-            # while more_url:
-            #     logger.debug(f"Fetching {more_url}")
-            #     response = self.get(more_url)
-            #     prefix_length = len('for (;;);')
-            #     data = json.loads(response.text[prefix_length:])  # Strip 'for (;;);'
-            #     for action in data['payload']['actions']:
-            #         if action['cmd'] == 'append' and action['html']:
-            #             element = utils.make_html_element(
-            #                 action['html'],
-            #                 url=FB_MOBILE_BASE_URL,
-            #             )
-            #             for elem in element.find("div._1a5p"):
-            #                 profile_picture = elem.find("i.profpic", first=True).attrs.get("style")
-            #                 match = re.search(r"url\('(.+)'\)", profile_picture)
-            #                 if match:
-            #                     profile_picture = utils.decode_css_url(match.groups()[0])
-            #                 result["likes"].append(
-            #                     {
-            #                         "name": elem.text,
-            #                         "link": elem.find("a", first=True).attrs.get("href"),
-            #                         "profile_picture": profile_picture,
-            #                     }
-            #                 )
-            #         elif action['cmd'] == 'script':
-            #             more_url = re.search(
-            #                 r'("\\/timeline\\/app_collection\\/more\\/[^"]+")', action["code"]
-            #             )
-            #             if more_url:
-            #                 more_url = more_url.group(1)
-            #                 more_url = json.loads(more_url)
+            more_url = re.search(r'href:"(/timeline/app_collection/more/[^"]+)"', response.text)
+            if more_url:
+                more_url = more_url.group(1)
+            while more_url:
+                logger.debug(f"Fetching {more_url}")
+                response = self.get(more_url)
+                prefix_length = len('for (;;);')
+                data = json.loads(response.text[prefix_length:])  # Strip 'for (;;);'
+                for action in data['payload']['actions']:
+                    if action['cmd'] == 'append' and action['html']:
+                        element = utils.make_html_element(
+                            action['html'],
+                            url=FB_MOBILE_BASE_URL,
+                        )
+                        for elem in element.find("div._1a5p"):
+                            result["likes"].append(
+                                {
+                                    "name": elem.text,
+                                    "link": elem.find("a", first=True).attrs.get("href"),
+                                }
+                            )
+                    elif action['cmd'] == 'script':
+                        more_url = re.search(
+                            r'("\\/timeline\\/app_collection\\/more\\/[^"]+")', action["code"]
+                        )
+                        if more_url:
+                            more_url = more_url.group(1)
+                            more_url = json.loads(more_url)
 
         return result
 
@@ -743,7 +748,6 @@ class FacebookScraper:
         )
         url = f'/groups/{group}'
         logger.debug(f"Requesting page from: {url}")
-        result = {}
         resp = self.get(url).html
         try:
             url = resp.find("a[href*='?view=info']", first=True).attrs["href"]
@@ -760,7 +764,7 @@ class FacebookScraper:
             raise exceptions.UnexpectedResponse("Unable to find Avatar")
         logger.debug(f"Requesting page from: {url}")
         resp = self.get(url).html
-        
+        result = {}
         result["id"] = re.search(r'/groups/(\d+)', url).group(1)
         try:
             result["name"] = resp.find("header h3", first=True).text
@@ -843,7 +847,7 @@ class FacebookScraper:
 
     def get_shop(self, page, **kwargs) -> Iterator[Post]:
         self.set_user_agent(
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3"
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8"
         )
         self.set_noscript(True)
         url = f"{page}/shop/"
@@ -867,8 +871,9 @@ class FacebookScraper:
         return results
 
     def get_group_posts(self, group: Union[str, int], **kwargs) -> Iterator[Post]:
+        kwargs["scraper"] = self
         self.set_user_agent(
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 8_6_1; like Mac OS X) AppleWebKit/536.19 (KHTML, like Gecko)  Chrome/52.0.2354.267 Mobile Safari/537.3"
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8"
         )
         iter_pages_fn = partial(iter_group_pages, group=group, request_fn=self.get, **kwargs)
         return self._generic_get_posts(extract_group_post, iter_pages_fn, **kwargs)
@@ -902,7 +907,13 @@ class FacebookScraper:
                 kwargs.pop("post")
                 response = self.session.post(url=url, **kwargs)
             else:
+                if url.startswith(FB_MBASIC_BASE_URL) and self.mbasic_headers is not None:
+                    self.session.headers.clear()
+                    self.session.headers.update(self.mbasic_headers)
                 response = self.session.get(url=url, **self.requests_kwargs, **kwargs)
+                if url.startswith(FB_MBASIC_BASE_URL) and self.mbasic_headers is not None:
+                    self.session.headers.clear()
+                    self.session.headers.update(self.default_headers)
             DEBUG = False
             if DEBUG:
                 for filename in os.listdir("."):
@@ -1047,12 +1058,10 @@ class FacebookScraper:
         page_limit=DEFAULT_PAGE_LIMIT,
         options=None,
         remove_source=True,
-        start_date=None,
-        end_date=None,
+        latest_date=None,
         max_past_limit=5,
         **kwargs,
     ):
-
         if options is None:
             options = {}
         elif isinstance(options, set):
@@ -1068,11 +1077,7 @@ class FacebookScraper:
             )
 
         # if latest_date is specified, iterate until the date is reached n times in a row (recurrent_past_posts)
-        self.account_is_disabled = False
-
-        # if start_date is specified, iterate until the date is reached n times in a row (recurrent_past_posts)
-        if start_date is not None:
-
+        if latest_date is not None:
             # Pinned posts repeat themselves over time, so ignore them
             pinned_posts = []
 
@@ -1086,33 +1091,25 @@ class FacebookScraper:
             done = False
 
             for page in iter_pages_fn():
-
                 for post_element in page:
                     try:
-                        # get only time of post
-                        partial_post = PostExtractor(post_element, kwargs, self.get).extract_time()
-
-                        # date is None, no way to check start_date, yield it
-                        if partial_post["time"] is None:
-                            null_date_posts += 1
-
-                        # check if greater than end_date if end_date is not None
-                        if partial_post["time"] is not None and end_date is not None and \
-                                partial_post['time'] > end_date:
-                            continue
-
-                        # date is above start_date, yield it
-                        if partial_post['time'] > start_date:
-                            recurrent_past_posts = 0
-
-                        # extract only relevant posts
-                        post = extract_post_fn(post_element, options=options, request_fn=self.get)
+                        post = extract_post_fn(
+                            post_element, options=options, request_fn=self.get, **kwargs
+                        )
 
                         if remove_source:
                             post.pop("source", None)
 
+                        # date is None, no way to check latest_date, yield it
+                        if post["time"] is None:
+                            null_date_posts += 1
+
+                        # date is above latest_date, yield it
+                        if post["time"] > latest_date:
+                            recurrent_past_posts = 0
+
                         # if any of above, yield the post and continue
-                        if partial_post["time"] is None or partial_post['time'] > start_date:
+                        if post["time"] is None or post["time"] > latest_date:
                             total_scraped_posts += 1
                             if total_scraped_posts % show_every == 0:
                                 logger.info("Posts scraped: %s", total_scraped_posts)
@@ -1167,8 +1164,16 @@ class FacebookScraper:
             logger.debug("Starting to iterate pages")
             for i, page in zip(counter, iter_pages_fn()):
                 logger.debug("Extracting posts from page %s", i)
+                # extra_info is already in the kwargs, so we pop it out
+                kwargs.pop("extra_info", None)
                 for post_element in page:
-                    post = extract_post_fn(post_element, options=options, request_fn=self.get)
+                    post = extract_post_fn(
+                        post_element,
+                        options=options,
+                        request_fn=self.get,
+                        extra_info=page.extra_info,
+                        **kwargs,
+                    )
                     if remove_source:
                         post.pop('source', None)
                     yield post
