@@ -10,38 +10,62 @@
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-
 Scrape Facebook public pages without an API key. Inspired by [twitter-scraper](https://github.com/kennethreitz/twitter-scraper).
+
+
+## Contributions
+We are moving a bit slowly on updates, so if you want to help please check the [TODO](#to-do) section below
+
 
 
 ## Install
 
-To install the latest release from PyPI:
+To install the latest release from PyPI (original version):
 
 ```sh
 pip install facebook-scraper
 ```
 
-Or, to install the latest master branch:
+Or, to install this latest master branch:
 
 ```sh
-pip install git+https://github.com/Deviance-Dev/facebook-scraper.git
+pip install git+https://github.com/moda20/facebook-scraper.git@master
+```
+
+Or, to force update the branch after an update : 
+
+```sh
+pip install --force-reinstall --no-deps git+https://github.com/moda20/facebook-scraper.git@master
+```
+
+And to add it to your requirements.txt manually : 
+
+```
+facebook-scraper @ git+https://github.com/moda20/facebook-scraper.git@master
 ```
 
 ## Usage
 
-Send the unique **page name, profile name, or ID** as the first parameter and you're good to go:
+in order to get everything running right, follow these steps
 
+1. Send the unique **page name, profile name, or ID** as the first parameter 
+2. Specify the base_url and start_url to use the mbasic page instead
+3. Get the mbasicHeaders that you want to use and read them from a file in order to inject them into the scraper.
+**you can get these headers from opening an example page and selecting a high-end device in the developer tools (such as samsung s20 ultra)
+. This will help with getting newer versions of posts and higher fidelity images.**
 ```python
->>> from facebook_scraper import get_posts
+from facebook_scraper import get_posts, _scraper
+import json
 
->>> for post in get_posts('nintendo', pages=1):
+with open('./mbasicHeaders.json', 'r') as file:
+    _scraper.mbasic_headers = json.load(file)
+
+for post in get_posts('NintendoAmerica', base_url="https://mbasic.facebook.com", start_url="https://mbasic.facebook.com/NintendoAmerica?v=timeline", pages=1):
 ...     print(post['text'][:50])
 ...
 The final step on the road to the Super Smash Bros
 We’re headed to PAX East 3/28-3/31 with new games
 ```
-
 
 ### Optional parameters
 
@@ -85,9 +109,9 @@ Download comments for a public Facebook post.
 import facebook_scraper as fs
 
 # get POST_ID from the URL of the post which can have the following structure:
-# https://www.facebook.com/USER/posts/POST_ID
-# https://www.facebook.com/groups/GROUP_ID/posts/POST_ID
-POST_ID = "pfbid02NsuAiBU9o1ouwBrw1vYAQ7khcVXvz8F8zMvkVat9UJ6uiwdgojgddQRLpXcVBqYbl"
+# https://mbasic.facebook.com/USER/posts/POST_ID
+# https://mbasic.facebook.com/groups/GROUP_ID/posts/POST_ID
+POST_ID = "https://mbasic.facebook.com/<pageId>/posts/<postId>"
 
 # number of comments to download -- set this to True to download all comments
 MAX_COMMENTS = 100
@@ -150,6 +174,9 @@ for comment in comments:
          '\n'
          'https://www.nintendo.com/amiibo/line-up/',
  'time': datetime.datetime(2019, 4, 30, 5, 0, 1),
+ 'full_text':'Don’t let this diminutive version of the Hero of Time fool you, '
+         'Young Link is just as heroic as his fully grown version! Young Link '
+         'joins the Super Smash Bros. series of amiibo figures!', # !! This will only be present if the post_text and text is truncated
  'user_id': '119240841493711',
  'username': 'Nintendo',
  'video': None,
@@ -158,26 +185,62 @@ for comment in comments:
  'w3_fb_url': 'https://www.facebook.com/Nintendo/posts/2257188721032235'}
 ```
 
-
 ### Notes
 
 - There is no guarantee that every field will be extracted (they might be `None`).
 - Group posts may be missing some fields like `time` and `post_url`.
 - Group scraping may return only one page and not work on private groups.
 - If you scrape too much, Facebook might temporarily ban your IP.
-- The vast majority of unique IDs on facebook (post IDs, video IDs, photo IDs, comment IDs, profile IDs, etc) can be appended to https://www.facebook.com/ to result in a redirect to the corresponding object.
+- The vast majority of unique IDs on facebook (post IDs, video IDs, photo IDs, comment IDs, profile IDs, etc) can be appended to "https://www.facebook.com/" to result in a redirect to the corresponding object.
 - Some functions (such as extracting reactions) require you to be logged into Facebook (pass cookies). If something isn't working as expected, try pass cookies and see if that fixes it.
+- Reaction Categories (EN): [`like`, `love`, `haha`, `sorry`, `wow`, `angry`, `care`]
+
+## Comment & Reply example
+```python
+{'comment_id': '1417925635669547', 
+ 'comment_url': 'https://facebook.com/1417925635669547', 
+ 'commenter_id': '100009665948953', 
+ 'commenter_url': 'https://facebook.com/tw0311?eav=AfZuEAOAat6KRX5WFplL0SNA4ZW78Z2O7W_sjwMApq67hZxXDwXh2WF2ezhICX1LCT4&fref=nf&rc=p&refid=52&__tn__=R&paipv=0', 
+ 'commenter_name': 'someone', 
+ 'commenter_meta': None, 
+ 'comment_text': 'something', 
+ 'comment_time': datetime.datetime(2023, 6, 23, 0, 0), 
+ 'comment_image': 'https://scontent.ftpe8-2.fna.fbcdn.net/m1/v/t6/An_UvxJXg9tdnLU3Y5qjPi0200MLilhzPXUgxzGjQzUMaNcmjdZA6anyrngvkdub33NZzZhd51fpCAEzNHFhko5aKRFP5fS1w_lKwYrzcNLupv27.png?ccb=10-5&oh=00_AfCdlpCwAg-SHhniMQ16uElFHh-OG8kGGmLAzvOY5_WZgw&oe=64BE3279&_nc_sid=7da55a', 
+ 'comment_reactors': [
+   {'name': 'Tom', 'link': 'https://facebook.com/ryan.dwayne?eav=AfaxdKIITTXyZj4H-eanXQgoxzOa8Vag6XkGXXDisGzh_W74RYZSXxlFZBofR4jUIOg&fref=pb&paipv=0', 'type': 'like'}, 
+   {'name': 'Macy', 'link': 'https://facebook.com/profile.php?id=100000112053053&eav=AfZ5iWlNN-EjjSwVNQl7E2HiVp25AUZMqfoPvLRZGnbUAQxuLeN8nl6xnnQTJB3uxDM&fref=pb&paipv=0', 'type': 'like'}],
+ 'comment_reactions': {'like': 2}, 
+ 'comment_reaction_count': 2, 
+ 'replies': [
+   {'comment_id': '793761608817229', 
+    'comment_url': 'https://facebook.com/793761608817229', 
+    'commenter_id': '100022377272712', 
+    'commenter_url': 'https://facebook.com/brizanne.torres?eav=Afab9uP4ByIMn1xaYK0UDd1SRU8e5Zu7faKEx6qTzLKD2vp_bB1xLDGvTwEd6u8A7jY&fref=nf&rc=p&__tn__=R&paipv=0', 
+    'commenter_name': 'David', 
+    'commenter_meta': None, 
+    'comment_text': 'something', 
+    'comment_time': datetime.datetime(2023, 6, 23, 18, 0), 
+    'comment_image': None, 
+    'comment_reactors': [], 
+    'comment_reactions': {'love': 2}, 
+    'comment_reaction_count': None}
+ ]
+}
+```
+
 
 ## Profiles
 
-The `get_profile` function can extract information from a profile's about section. Pass in the account name or ID as the first parameter.  
+The `get_profile` function can extract information from a profile's about section. Pass in the account name or ID as the first parameter.
 Note that Facebook serves different information depending on whether you're logged in (cookies parameter), such as Date of birth and Gender. Usage:
 
 ```python
 from facebook_scraper import get_profile
 get_profile("zuck") # Or get_profile("zuck", cookies="cookies.txt")
 ```
+
 Outputs:
+
 ```python
 {'About': "I'm trying to make the world a more open place.",
  'Education': 'Harvard University\n'
@@ -218,7 +281,7 @@ To extract friends, pass the argument `friends=True`, or to limit the amount of 
 
 ## Group info
 
-The `get_group_info` function can extract info about a group. Pass in the group name or ID as the first parameter.  
+The `get_group_info` function can extract info about a group. Pass in the group name or ID as the first parameter.
 Note that in order to see the list of admins, you need to be logged in (cookies parameter).
 
 Usage:
@@ -243,13 +306,50 @@ Output:
  'type': 'Public group'}
 ```
 
+## Write to a CSV file directly
+
+The library also provides a `write_posts_to_csv()` function that writes posts directly to the disk and is able to resume scraping from the address of the last page. It is very useful when scraping large pages as the data is saved continuously and scraping can be resumed in case of an error. Here is an example to fetch the posts of a group 100 pages at a time and save them in separate files.
+
+```python
+import facebook_scraper as fs
+
+# Saves the first 100 pages
+for i in range(1, 101):
+    fs.write_posts_to_csv(
+        group=GROUP_ID, # The method uses get_posts internally so you can use the same arguments and they will be passed along
+        page_limit=100,
+        timeout=60,
+        options={
+            'allow_extra_requests': False
+        },
+        filename=f'./data/messages_{i}.csv', # Will throw an error if the file already exists
+        resume_file='next_page.txt', # Will save a link to the next page in this file after fetching it and use it when starting.
+        matching='.+', # A regex can be used to filter all the posts matching a certain pattern (here, we accept anything)
+        not_matching='^Warning', # And likewise those that don't fit a pattern (here, we filter out all posts starting with "Warning")
+        keys=[
+            'post_id',
+            'text',
+            'timestamp',
+            'time',
+            'user_id'
+        ], # List of the keys that should be saved for each post, will save all keys if not set
+        format='csv', # Output file format, can be csv or json, defaults to csv
+        days_limit=3650 # Number of days for the oldest post to fetch, defaults to 3650
+    )
+
+```
+
+
+## Funny Graphics 
+
+[![Star History Chart](https://api.star-history.com/svg?repos=moda20/facebook-scraper&type=Date)](https://star-history.com/#moda20/facebook-scraper&Date)
 ## To-Do
 
+- CLI update to work with the latest script updates (NEEDS HELP)
 - Async support
 - ~~Image galleries~~ (`images` entry)
 - ~~Profiles or post authors~~ (`get_profile()`)
 - ~~Comments~~ (with `options={'comments': True}`)
-
 
 ## Alternatives and related projects
 
@@ -259,6 +359,6 @@ Output:
 - [Unofficial APIs](https://github.com/Rolstenhouse/unofficial-apis). List of unofficial APIs for various services, none for Facebook for now, but might be worth to check in the future.
 - [major-scrapy-spiders](https://github.com/talhashraf/major-scrapy-spiders). Has a profile spider for Scrapy.
 - [facebook-page-post-scraper](https://github.com/minimaxir/facebook-page-post-scraper). Seems abandoned.
-    - [FBLYZE](https://github.com/isaacmg/fb_scraper). Fork (?).
+- [FBLYZE](https://github.com/isaacmg/fb_scraper). Fork (?).
 - [RSSHub](https://github.com/DIYgod/RSSHub/blob/master/lib/routes/facebook/page.js). Generates an RSS feed from Facebook pages.
 - [RSS-Bridge](https://github.com/RSS-Bridge/rss-bridge/blob/master/bridges/FacebookBridge.php). Also generates RSS feeds from Facebook pages.
