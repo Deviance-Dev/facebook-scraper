@@ -781,6 +781,11 @@ class PostExtractor:
         elems = list(response.html.find("div[id^='reaction_profile_browser']>div"))
         for elem in elems:
             try:
+                profile_picture = elem.find("img[class='bg s']", first=True).attrs.get("src")
+            except Exception as e:
+                picture = elem.find(".profpic.img", first=True).attrs.get("style")
+                profile_picture = utils.get_background_image_url(picture)
+            try:
                 emoji_class = elem.find(f"div>i.{spriteMapCssClass}", first=True).attrs.get(
                     "class"
                 )[-1]
@@ -799,6 +804,7 @@ class PostExtractor:
                     reaction_type = None
             yield {
                 "name": elem.find("strong", first=True).text,
+                "profile_picture": profile_picture,
                 "link": utils.urljoin(FB_BASE_URL, elem.find("a", first=True).attrs.get("href")),
                 "type": reaction_type,
             }
@@ -1129,6 +1135,10 @@ class PostExtractor:
             profile_picture = comment.find(".profpic.img", first=True)
             name = profile_picture.attrs.get("alt") or profile_picture.attrs.get("aria-label")
             name = name.split(",")[0]
+            avatar_style = profile_picture.attrs.get("style")
+            commenter_avatar = utils.get_background_image_url(avatar_style)
+            print("AVATAR")
+            print(commenter_avatar)
             commenter_id = re.search(r'feed_story_ring(\d+)', comment.html)
             if commenter_id:
                 commenter_id = commenter_id.group(1)
@@ -1210,6 +1220,7 @@ class PostExtractor:
             "commenter_url": url,
             "commenter_name": name,
             "commenter_meta": commenter_meta,
+            "commenter_avatar": commenter_avatar,
             "comment_text": text,
             "comment_time": date,
             "comment_image": image_url,
@@ -1427,17 +1438,17 @@ class PostExtractor:
 
     def extract_with(self) -> PartialPost:
         # Header is like "user is with other_user and n others"
-        links = self.element.find("header h3 a")[1:]
-        if links:
-            people = [{"name": links[0].text, "link": links[0].attrs["href"]}]
-            url = links[-1].attrs["href"]
-            if url.startswith("/browse/users/"):
-                logger.debug(f"Fetching {url}")
-                response = self.request(url)
-                links = response.html.find("#root .item>div>div>a:not(.touchable)")
-                for link in links:
-                    people.append({"name": link.text, "link": link.attrs["href"]})
-            return {"with": people, "header": self.element.find("header h3", first=True).text}
+        # links = self.element.find("header h3 a")[1:]
+        # if links:
+        #     people = [{"name": links[0].text, "link": links[0].attrs["href"]}]
+        #     url = links[-1].attrs["href"]
+        #     if url.startswith("/browse/users/"):
+        #         logger.debug(f"Fetching {url}")
+        #         response = self.request(url)
+        #         links = response.html.find("#root .item>div>div>a:not(.touchable)")
+        #         for link in links:
+        #             people.append({"name": link.text, "link": link.attrs["href"]})
+        #     return {"with": people, "header": self.element.find("header h3", first=True).text}
 
     @property
     def data_ft(self) -> dict:

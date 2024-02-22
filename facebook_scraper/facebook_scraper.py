@@ -335,17 +335,17 @@ class FacebookScraper:
         if kwargs.get("allow_extra_requests", True):
             logger.debug(f"Requesting page from: {account}")
             response = self.get(account)
-            try:
-                top_post = response.html.find(
-                    '[data-ft*="top_level_post_id"]:not([data-sigil="m-see-translate-link"])',
-                    first=True,
-                )
-                assert top_post is not None
-                top_post = PostExtractor(top_post, kwargs, self.get).extract_post()
-                top_post.pop("source")
-                result["top_post"] = top_post
-            except Exception as e:
-                logger.error(f"Unable to extract top_post {type(e)}:{e}")
+            # try:
+            #     top_post = response.html.find(
+            #         '[data-ft*="top_level_post_id"]:not([data-sigil="m-see-translate-link"])',
+            #         first=True,
+            #     )
+            #     assert top_post is not None
+            #     top_post = PostExtractor(top_post, kwargs, self.get).extract_post()
+            #     top_post.pop("source")
+            #     result["top_post"] = top_post
+            # except Exception as e:
+            #     logger.error(f"Unable to extract top_post {type(e)}:{e}")
 
             try:
                 result["Friend_count"] = utils.parse_int(
@@ -545,34 +545,34 @@ class FacebookScraper:
                         "profile_picture": profile_picture,
                     }
                 )
-            more_url = re.search(r'href:"(/timeline/app_collection/more/[^"]+)"', response.text)
-            if more_url:
-                more_url = more_url.group(1)
-            while more_url:
-                logger.debug(f"Fetching {more_url}")
-                response = self.get(more_url)
-                prefix_length = len('for (;;);')
-                data = json.loads(response.text[prefix_length:])  # Strip 'for (;;);'
-                for action in data['payload']['actions']:
-                    if action['cmd'] == 'append' and action['html']:
-                        element = utils.make_html_element(
-                            action['html'],
-                            url=FB_MOBILE_BASE_URL,
-                        )
-                        for elem in element.find("div._1a5p"):
-                            result["likes"].append(
-                                {
-                                    "name": elem.text,
-                                    "link": elem.find("a", first=True).attrs.get("href"),
-                                }
-                            )
-                    elif action['cmd'] == 'script':
-                        more_url = re.search(
-                            r'("\\/timeline\\/app_collection\\/more\\/[^"]+")', action["code"]
-                        )
-                        if more_url:
-                            more_url = more_url.group(1)
-                            more_url = json.loads(more_url)
+            # more_url = re.search(r'href:"(/timeline/app_collection/more/[^"]+)"', response.text)
+            # if more_url:
+            #     more_url = more_url.group(1)
+            # while more_url:
+            #     logger.debug(f"Fetching {more_url}")
+            #     response = self.get(more_url)
+            #     prefix_length = len('for (;;);')
+            #     data = json.loads(response.text[prefix_length:])  # Strip 'for (;;);'
+            #     for action in data['payload']['actions']:
+            #         if action['cmd'] == 'append' and action['html']:
+            #             element = utils.make_html_element(
+            #                 action['html'],
+            #                 url=FB_MOBILE_BASE_URL,
+            #             )
+            #             for elem in element.find("div._1a5p"):
+            #                 result["likes"].append(
+            #                     {
+            #                         "name": elem.text,
+            #                         "link": elem.find("a", first=True).attrs.get("href"),
+            #                     }
+            #                 )
+            #         elif action['cmd'] == 'script':
+            #             more_url = re.search(
+            #                 r'("\\/timeline\\/app_collection\\/more\\/[^"]+")', action["code"]
+            #             )
+            #             if more_url:
+            #                 more_url = more_url.group(1)
+            #                 more_url = json.loads(more_url)
 
         return result
 
